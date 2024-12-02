@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Information - User ID: <%= lead.user_id %></title>
+    <!-- Bootstrap CSS for Styling -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEJ6H2z4M5dF7DBD4g7n6thJhA4zfy5FtrdUq1d6GpRz5tD6KqlmXgZnJl0a9" crossorigin="anonymous">
+    <style>
+        body {
+            background-color: #f4f7fc;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .section-title {
+            margin-top: 30px;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        table {
+            margin-bottom: 20px;
+        }
+        .lead-info-section {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        .lead-info-section h3 {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .lead-info-section table {
+            margin-bottom: 15px;
+        }
+        .lead-info-section td, .lead-info-section th {
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Page Title -->
+        <div class="row mb-4">
+            <div class="col">
+                <h1 class="display-4">Lead Information - User ID: <%= lead.user_id %></h1>
+            </div>
+        </div>
+
+        <!-- Lead Information Section -->
+        <div class="lead-info-section">
+            <h3>Lead Information</h3>
+            <table class="table table-bordered table-striped">
+                <tbody>
+                    <tr>
+                        <th>User ID</th>
+                        <td><%= lead.user_id %></td>
+                    </tr>
+                    <tr>
+                        <th>First Name</th>
+                        <td><%= lead.first_name %></td>
+                    </tr>
+                    <tr>
+                        <th>Last Name</th>
+                        <td><%= lead.last_name %></td>
+                    </tr>
+                    <tr>
+                        <th>Email</th>
+                        <td><%= lead.email %></td>
+                    </tr>
+                    <tr>
+                        <th>Phone Number</th>
+                        <td><%= lead.phone_number %></td>
+                    </tr>
+                    <tr>
+                        <th>Created At</th>
+                        <td><%= lead.created_at %></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Company Details Section -->
+        <div class="lead-info-section">
+            <h3>Company Details</h3>
+            <table class="table table-bordered table-striped">
+                <tbody>
+                    <tr>
+                        <th>Company Name</th>
+                        <td><%= lead.company_name || 'N/A' %></td>
+                    </tr>
+                    <tr>
+                        <th>Legal Name</th>
+                        <td><%= lead.legal_name || 'N/A' %></td>
+                    </tr>
+                    <tr>
+                        <th>GST Number</th>
+                        <td><%= lead.gst_number || 'N/A' %></td>
+                    </tr>
+                    <tr>
+                        <th>Company Address</th>
+                        <td><%= lead.company_address_line1 || 'N/A' %>, <%= lead.company_address_line2 || 'N/A' %>, <%= lead.company_city || 'N/A' %>, <%= lead.company_state || 'N/A' %>, <%= lead.company_pincode || 'N/A' %></td>
+                    </tr>
+                    <tr>
+                        <th>GST Invoice</th>
+                        <td><%= lead.gst_invoice || 'N/A' %></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Courses Enrolled Section -->
+        <div class="lead-info-section">
+            <h3>Courses Enrolled</h3>
+            <table class="table table-bordered table-striped">
+                <tbody>
+                    <tr>
+                        <th>Course Name</th>
+                        <td><%= lead.course_name || 'N/A' %></td>
+                    </tr>
+                    <tr>
+                        <th>Legal Name</th>
+                        <td><%= lead.legal_name || 'N/A' %></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Event Registration Section -->
+        <div class="lead-info-section">
+            <h3>Event Registration</h3>
+            <table class="table table-bordered table-striped">
+                <tbody>
+                    <tr>
+                        <th>Event Name</th>
+                        <td><%= lead.event_name || 'N/A' %></td>
+                    </tr>
+                    <tr>
+                        <th>Batch</th>
+                        <td><%= lead.batch || 'N/A' %></td>
+                    </tr>
+                    <tr>
+                        <th>Event Date</th>
+                        <td><%= lead.event_date || 'N/A' %></td>
+                    </tr>
+                    <tr>
+                        <th>Event Time</th>
+                        <td><%= lead.event_time || 'N/A' %></td>
+                    </tr>
+                    <tr>
+                        <th>Platform</th>
+                        <td><%= lead.platform || 'N/A' %></td>
+                    </tr>
+                    <tr>
+                        <th>Registration Date</th>
+                        <td><%= lead.registration_date || 'N/A' %></td>
+                    </tr>
+                    <tr>
+                        <th>Event Link</th>
+                        <td><%= lead.event_link || 'N/A' %></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Personal Info Section -->
+        <div class="lead-info-section">
+            <h3>Personal Information</h3>
+            <table class="table table-bordered table-striped">
+                <tbody>
+                    <tr>
+                        <th>Address Line 1</th>
+                        <td><%= lead.address_line1 || 'N/A' %></td>
+                    </tr>
+                    <tr>
+                        <th>Address Line 2</th>
+                        <td><%= lead.address_line2 || 'N/A' %></td>
+                    </tr>
+                    <tr>
+                        <th>City</th>
+                        <td><%= lead.city || 'N/A' %></td>
+                    </tr>
+                    <tr>
+                        <th>State</th>
+                        <td><%= lead.state || 'N/A' %></td>
+                    </tr>
+                    <tr>
+                        <th>Pincode</th>
+                        <td><%= lead.pincode || 'N/A' %></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz4fnFO9gybY9kP6Pp6nq6tR5gwp4kH5ReO0i5n6kxyESbS10QnS9RS2mo" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js" integrity="sha384-pzjw8f+ua7Kw1TIq0g9oF6g7vBToP8vC4rT1ImXq6EMh0n01iPqFfS4xkHzNxzF0" crossorigin="anonymous"></script>
+</body>
+</html>

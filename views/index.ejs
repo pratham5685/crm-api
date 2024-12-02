@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        .accordion-button:focus {
+            box-shadow: none; /* Remove focus ring on button */
+        }
+    </style>
+</head>
+<body>
+   
+    <div class="container mt-5">
+        <h1 class="mb-4">Workflows</h1>
+        
+        <button class="btn btn-primary mb-4" data-bs-toggle="modal" data-bs-target="#createWorkflowModal">Create Workflow</button>
+
+        <div class="modal fade" id="createWorkflowModal" tabindex="-1" aria-labelledby="createWorkflowModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createWorkflowModalLabel">Create New Workflow</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="createWorkflowFormModal">
+                            <div class="mb-3">
+                                <label for="workflowName" class="form-label">Workflow Name</label>
+                                <input type="text" class="form-control" id="workflowName" name="name" placeholder="Enter workflow name" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2>Existing Workflows</h2>
+        <div id="workflowAccordion" class="accordion">
+            <% workflows.forEach(workflow => { %>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-<%= workflow.id %>">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-<%= workflow.id %>" aria-expanded="true" aria-controls="collapse-<%= workflow.id %>">
+                            <%= workflow.name %>
+                        </button>
+                    </h2>
+                    <div id="collapse-<%= workflow.id %>" class="accordion-collapse collapse" aria-labelledby="heading-<%= workflow.id %>" data-bs-parent="#workflowAccordion">
+                        <div class="accordion-body">
+                            <!-- Link to individual workflow page -->
+                            <a class="btn btn-link" href="/workflow/<%= workflow.id %>">View Details</a>
+
+                            <!-- Optionally, you can add other actions here for the workflow, like: -->
+                            <button class="btn btn-warning btn-sm" onclick="showRenameModal('<%= workflow.id %>', '<%= workflow.name %>')">Rename</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteWorkflow('<%= workflow.id %>')">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+        
+        <!-- Rename Workflow Modal -->
+        <div class="modal fade" id="renameWorkflowModal" tabindex="-1" aria-labelledby="renameWorkflowModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="renameWorkflowModalLabel">Rename Workflow</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="renameWorkflowForm">
+                            <div class="mb-3">
+                                <label for="newWorkflowName" class="form-label">New Workflow Name</label>
+                                <input type="text" class="form-control" id="newWorkflowName" placeholder="Enter new workflow name" required>
+                            </div>
+                            <input type="hidden" id="workflowIdToRename">
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.getElementById('createWorkflowFormModal').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('workflowName').value;
+
+            fetch('/api/workflow/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                location.reload(); 
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+
+        document.getElementById('renameWorkflowForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const newName = document.getElementById('newWorkflowName').value;
+            const workflowId = document.getElementById('workflowIdToRename').value;
+
+            fetch(`/api/workflow/${workflowId}/rename`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ newName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                location.reload(); 
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+
+        function showRenameModal(workflowId, currentName) {
+            document.getElementById('workflowIdToRename').value = workflowId;
+            document.getElementById('newWorkflowName').value = currentName;
+            new bootstrap.Modal(document.getElementById('renameWorkflowModal')).show();
+        }
+
+        function deleteWorkflow(workflowId) {
+            if (confirm('Are you sure you want to delete this workflow?')) {
+                fetch(`/api/workflow/${workflowId}/delete`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    location.reload(); 
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+        }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

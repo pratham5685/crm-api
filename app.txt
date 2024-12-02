@@ -1,0 +1,381 @@
+│
+├── config/
+│    └── db.js
+│
+├── routes/
+│    └── workflow.js
+│
+├── models/
+│    └── workflowModel.js
+│
+├── app.js
+├── package.json
+└── README.md, workflow.js : // routes/workflow.js
+const express = require('express');
+const router = express.Router();
+const workflowModel = require('../models/workflowModel');
+
+// Route to create a new workflow
+router.post('/create', (req, res) => {
+  const { name } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ error: 'Workflow name is required' });
+  }
+
+  // Create a new workflow
+  workflowModel.createWorkflow(name, (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    res.status(201).json({
+      message: 'Workflow created successfully',
+      workflowId: result.insertId
+    });
+  });
+});
+
+// Route to generate a dynamic API URL for a workflow
+router.post('/:id/generate', (req, res) => {
+  const workflowId = req.params.id;
+
+  // Generate the dynamic API URL
+  const apiUrl = http://localhost:3000/api/workflow/${workflowId}/submit;
+
+  res.json({
+    message: 'API generated successfully',
+    apiUrl: apiUrl
+  });
+});
+
+// Handle form submissions for a specific workflow
+router.post('/:id/submit', (req, res) => {
+  const workflowId = req.params.id;
+  const formData = req.body;
+
+  // Dynamically create the workflow table if it doesn't exist
+  workflowModel.createWorkflowTable(workflowId, (err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error creating workflow table' });
+    }
+
+    // Save the form data to the newly created table
+    workflowModel.saveFormData(workflowId, formData, (err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error saving form data' });
+      }
+
+      res.status(201).json({ message: 'Form data submitted successfully' });
+    });
+  });
+});
+
+
+// Route to fetch form data for a specific workflow
+// Route to get submitted data for a specific workflow
+router.get('/:id/data', (req, res) => {
+  const workflowId = req.params.id;
+
+  // Retrieve submitted data from the corresponding table
+  workflowModel.getFormData(workflowId, (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error retrieving form data' });
+    }
+
+    res.json({ formData: results });
+  });
+});
+
+module.exports = router; , app.js : // app.js
+const express = require('express');
+const bodyParser = require('body-parser');
+const workflowRoutes = require('./routes/workflow'); // Import workflow routes
+const db = require('./config/db'); // Import database connection
+const app = express();
+
+// Middleware to parse JSON and URL-encoded data
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Set view engine to EJS
+app.set('view engine', 'ejs');
+
+// Route to render index page and fetch existing workflows
+app.get('/', (req, res) => {
+  db.query('SELECT * FROM workflows', (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: 'Error fetching workflows' });
+    }
+    res.render('index', { workflows: results }); // Pass workflows to the view
+  });
+});
+
+// Use the workflow routes
+app.use('/api/workflow', workflowRoutes);
+
+// Start the server
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(Server is running on http://localhost:${PORT});
+}); , index.ejs : <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa; /* Light background for contrast */
+        }
+        .container {
+            background: white; /* White background for content area */
+            border-radius: 8px; /* Rounded corners */
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+            padding: 30px; /* Padding for content */
+        }
+        .api-url, .form-data {
+            display: none; /* Initially hide the API URL and form data */
+        }
+        .faq-question {
+            cursor: pointer; /* Pointer cursor for questions */
+            transition: background-color 0.2s; /* Smooth hover effect */
+        }
+        .faq-question:hover {
+            background-color: #e9ecef; /* Light gray on hover */
+        }
+        .btn-link {
+            font-size: 16px; /* Larger font for links */
+        }
+        .data-list {
+            list-style: none; /* No bullet points */
+            padding-left: 0; /* Remove padding */
+        }
+        .data-list li {
+            background: #f1f1f1; /* Light gray background for list items */
+            border-radius: 5px; /* Rounded corners for items */
+            margin: 5px 0; /* Spacing between items */
+            padding: 10px; /* Padding for items */
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Create New Workflow</h1>
+        <form id="createWorkflowForm" class="mb-5">
+            <div class="mb-3">
+                <label for="workflowName" class="form-label">Workflow Name</label>
+                <input type="text" class="form-control" id="workflowName" name="name" placeholder="Enter workflow name" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Create Workflow</button>
+        </form>
+
+        <hr>
+
+        <h2>Existing Workflows</h2>
+        <div id="workflowAccordion" class="accordion">
+            <% workflows.forEach(workflow => { %>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-<%= workflow.id %>">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-<%= workflow.id %>" aria-expanded="true" aria-controls="collapse-<%= workflow.id %>">
+                            <%= workflow.name %>
+                        </button>
+                    </h2>
+                    <div id="collapse-<%= workflow.id %>" class="accordion-collapse collapse" aria-labelledby="heading-<%= workflow.id %>" data-bs-parent="#workflowAccordion">
+                        <div class="accordion-body">
+                            <!-- API URL Section -->
+                            <a class="btn btn-link" href="#" onclick="showApiUrl('<%= workflow.id %>')">Get API URL</a>
+                            <div id="apiUrl-<%= workflow.id %>" class="api-url mt-2">
+                                <strong>API URL:</strong> <span id="url-<%= workflow.id %>"></span>
+                            </div>
+                            
+                            <!-- Form Data Section -->
+                            <a class="btn btn-link" href="#" onclick="showFormData('<%= workflow.id %>')">Show Submitted Data</a>
+                            <div id="formData-<%= workflow.id %>" class="form-data mt-2">
+                                <h6>Submitted Form Data:</h6>
+                                <ul id="dataList-<%= workflow.id %>" class="data-list"></ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+        
+    </div>
+
+    <script>
+        // Handle form submission
+        document.getElementById('createWorkflowForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('workflowName').value;
+
+            fetch('/api/workflow/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                location.reload(); // Reload the page to see the new workflow
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+
+        // Function to show the API URL for a specific workflow
+        function showApiUrl(workflowId) {
+            fetch(/api/workflow/${workflowId}/generate, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const apiUrlContainer = document.getElementById(apiUrl-${workflowId});
+                const urlSpan = document.getElementById(url-${workflowId});
+                urlSpan.textContent = data.apiUrl; // Set the API URL in the span
+                apiUrlContainer.style.display = 'block'; // Show the URL
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Function to show the submitted form data for a specific workflow
+        function showFormData(workflowId) {
+            fetch(/api/workflow/${workflowId}/data, {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const formDataContainer = document.getElementById(formData-${workflowId});
+                const dataList = document.getElementById(dataList-${workflowId});
+                
+                // Clear existing list items
+                dataList.innerHTML = '';
+
+                // Populate the list with submitted data
+                data.formData.forEach(item => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = JSON.stringify(item); // Display form data as JSON
+                    dataList.appendChild(listItem);
+                });
+
+                formDataContainer.style.display = 'block'; // Show form data
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> , workflowModel.js : // models/workflowModel.js
+const db = require('../config/db');
+
+const workflowModel = {
+  // Function to create a workflow in the 'workflows' table
+  createWorkflow: (name, callback) => {
+    const query = 'INSERT INTO workflows (name) VALUES (?)';
+    db.query(query, [name], callback);
+  },
+
+  // Function to dynamically create a table for storing form submissions
+  createWorkflowTable: (workflowId, callback) => {
+    const tableName = workflow_${workflowId}_data;  // Name of the dynamic table
+    const query = 
+      CREATE TABLE IF NOT EXISTS ${tableName} (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        form_data JSON NOT NULL,
+        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    ;
+    db.query(query, callback);
+  },
+
+  // Function to save form data to the dynamically created table
+  saveFormData: (workflowId, formData, callback) => {
+    const tableName = workflow_${workflowId}_data;  // Name of the dynamic table
+    const query = INSERT INTO ${tableName} (form_data) VALUES (?);
+    db.query(query, [JSON.stringify(formData)], callback);
+  },
+
+   // Function to get form data from the dynamically created table
+   getFormData: (workflowId, callback) => {
+    const tableName = workflow_${workflowId}_data; // Name of the dynamic table
+    const query = SELECT form_data FROM ${tableName};
+    
+    db.query(query, (err, results) => {
+      if (err) {
+        return callback(err);
+      }
+      // Parse JSON data from the database
+      const parsedResults = results.map(row => JSON.parse(row.form_data));
+      callback(null, parsedResults);
+    });
+  },
+
+
+
+
+
+
+};
+
+  
+module.exports = workflowModel; , this is the basecode please remeber it ,
+
+
+
+
+-- Drop the existing table if it exists
+DROP TABLE IF EXISTS workflows;
+
+-- Create the workflows table with a VARCHAR id
+CREATE TABLE workflows (
+    id VARCHAR(26) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+
+steps to implement this :
+
+1. show all the existing tables in the dropdown of the workflow details page.
+2. make an to save the selected table in workflow table. 
+3. create a trigger when the endpoint is hit
+4. then code action for it. 
+
+
+
+
+personal_info
+
+{
+  "user_id": 1599,
+  "address_line1": "123 Main Street",
+  "address_line2": "Apt 4B",
+  "city": "Springfield",
+  "state": "Illinois",
+  "pincode": "62701"
+}
+
+lead_info
+{
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john.doe@example.com",
+  "phone_number": "+1234567890"
+}
+

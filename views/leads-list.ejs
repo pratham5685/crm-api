@@ -1,0 +1,68 @@
+<!-- views/leads-list.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Information</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .view-button {
+            padding: 8px 16px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .view-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lead Information</h1>
+
+    <% if (leads && leads.length > 0) { %>
+        <table>
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Email</th>
+                    <th>Phone Number</th>
+                    <th>Created At</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% leads.forEach(function(lead) { %>
+                    <tr>
+                        <td><%= lead.user_id %></td>
+                        <td><%= lead.first_name %></td>
+                        <td><%= lead.last_name %></td>
+                        <td><%= lead.email %></td>
+                        <td><%= lead.phone_number %></td>
+                        <td><%= lead.created_at %></td>
+                        <td><a href="/leads/view/<%= lead.user_id %>"><button class="view-button">View</button></a></td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    <% } else { %>
+        <p>No leads found.</p>
+    <% } %>
+
+</body>
+</html>

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow: <%= workflow.name %></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        .data-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .data-list li {
+            margin-bottom: 10px;
+        }
+        .copy-btn {
+            cursor: pointer;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin-left: 10px;
+            border-radius: 5px;
+        }
+        .copy-btn:hover {
+            background-color: #5a6268;
+        }
+        .back-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+        }
+        .back-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Workflow: <%= workflow.name %></h1>
+
+        <button class="btn btn-primary mb-4" data-bs-toggle="modal" data-bs-target="#renameWorkflowModal">Rename Workflow</button>
+        <button class="btn btn-danger mb-4" onclick="deleteWorkflow('<%= workflow.id %>')">Delete Workflow</button>
+
+        <!-- Back to Index Button -->
+        <a href="/" class="btn back-btn mb-4">Back to Index</a>
+
+        <div>
+            <a class="btn btn-link" href="#" onclick="showApiUrl('<%= workflow.id %>')">Get API URL</a>
+            <div id="apiUrl-<%= workflow.id %>" class="mt-2" style="display:none;">
+                <strong>API URL:</strong> 
+                <span id="url-<%= workflow.id %>"></span>
+                <button class="copy-btn" onclick="copyApiUrl('<%= workflow.id %>')">Copy</button>
+            </div>
+        </div>
+
+
+
+<!-- Dropdown for Table Selection -->
+<div class="mb-3">
+    <label for="tableSelect" class="form-label">Select Table:</label>
+    <select id="tableSelect" class="form-select">
+        <option value="">-- Select Table --</option>
+        <!-- Table options will be populated dynamically -->
+    </select>
+</div>
+<!-- Current Selected Table -->
+<div>
+    <strong>Current Selected Table:</strong>
+    <span id="currentSelectedTable">Loading...</span> <!-- This will be dynamically updated -->
+</div>
+
+
+<!-- Button to Save Selected Table -->
+<button id="saveTableBtn" class="btn btn-success mb-4" onclick="saveSelectedTable('<%= workflow.id %>')">Save Selected Table</button>
+
+
+
+
+
+        <div>
+            <a class="btn btn-link" href="#" onclick="showFormData('<%= workflow.id %>')">Show Submitted Data</a>
+            <div id="formData-<%= workflow.id %>" class="mt-2" style="display:none;">
+                <h6>Submitted Form Data (First Entry):</h6>
+                <ul id="dataList-<%= workflow.id %>" class="data-list"></ul>
+            </div>
+        </div>
+
+        <!-- Rename Workflow Modal -->
+        <div class="modal fade" id="renameWorkflowModal" tabindex="-1" aria-labelledby="renameWorkflowModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="renameWorkflowModalLabel">Rename Workflow</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="renameWorkflowForm">
+                            <div class="mb-3">
+                                <label for="newWorkflowName" class="form-label">New Workflow Name</label>
+                                <input type="text" class="form-control" id="newWorkflowName" value="<%= workflow.name %>" required>
+                            </div>
+                            <input type="hidden" id="workflowIdToRename" value="<%= workflow.id %>">
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Show API URL for the workflow
+        function showApiUrl(workflowId) {
+            fetch(`/api/workflow/${workflowId}/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const apiUrlContainer = document.getElementById(`apiUrl-${workflowId}`);
+                const urlSpan = document.getElementById(`url-${workflowId}`);
+                urlSpan.textContent = data.apiUrl;
+                apiUrlContainer.style.display = 'block';
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Copy the API URL to the clipboard
+        function copyApiUrl(workflowId) {
+            const apiUrl = document.getElementById(`url-${workflowId}`).textContent;
+            navigator.clipboard.writeText(apiUrl)
+                .then(() => {
+                    alert('API URL copied to clipboard!');
+                })
+                .catch(err => {
+                    console.error('Failed to copy: ', err);
+                    alert('Failed to copy API URL.');
+                });
+        }
+
+
+
+
+// Show form data for the workflow (All columns, even if empty)
+function showFormData(workflowId) {
+    fetch(`/api/workflow/${workflowId}/data`, {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        const formDataContainer = document.getElementById(`formData-${workflowId}`);
+        const dataList = document.getElementById(`dataList-${workflowId}`);
+        
+        dataList.innerHTML = ''; // Clear any existing data
+        
+        if (data.formData && data.formData.length > 0) {
+            // Collect all possible keys (columns) across all form entries
+            const allKeys = new Set();
+            data.formData.forEach(entry => {
+                Object.keys(entry).forEach(key => allKeys.add(key));
+            });
+
+            // Now show data for the first entry, filling in missing columns with empty values
+            const firstRow = data.formData[0]; // Get the first row of form data
+
+            // Loop through all possible keys (columns)
+            allKeys.forEach(key => {
+                const listItem = document.createElement('li');
+                // If the key exists in the first row, show its value, otherwise show a blank
+                listItem.innerHTML = `<strong>${key}:</strong> ${firstRow[key] || ''}`;
+                dataList.appendChild(listItem);
+            });
+
+        } else {
+            const listItem = document.createElement('li');
+            listItem.textContent = 'No data available.';
+            dataList.appendChild(listItem);
+        }
+
+        formDataContainer.style.display = 'block';
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+
+
+
+
+        // Delete a workflow
+        function deleteWorkflow(workflowId) {
+            if (confirm('Are you sure you want to delete this workflow?')) {
+                fetch(`/api/workflow/${workflowId}/delete`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    window.location.href = '/'; // Redirect to the index page after deletion
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+
+        // Handle rename workflow
+        document.getElementById('renameWorkflowForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const newName = document.getElementById('newWorkflowName').value;
+            const workflowId = document.getElementById('workflowIdToRename').value;
+
+            fetch(`/api/workflow/${workflowId}/rename`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ newName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                location.reload(); // Reload the page to reflect the new name
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+       
+
+
+
+
+        // Function to load tables when the page is ready
+window.onload = function() {
+    const workflowId = '<%= workflow.id %>'; // Use the workflow ID here
+
+    // Fetch the list of tables from the backend
+    fetch(`/api/workflow/${workflowId}/tables`)
+        .then(response => response.json())
+        .then(data => {
+            const tableSelect = document.getElementById('tableSelect');
+
+            // Clear any existing options
+            tableSelect.innerHTML = '<option value="">-- Select Table --</option>';
+
+            // Add the table options dynamically
+            data.tables.forEach(function(table) {
+                const option = document.createElement('option');
+                option.value = table;
+                option.textContent = table;
+                tableSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching table names:', error);
+        });
+
+
+
+
+          // Fetch the selected table name for the current workflow
+    fetch(`/api/workflow/${workflowId}/selected-table`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch selected table');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const selectedTableElement = document.getElementById('currentSelectedTable'); // The HTML element to display table name
+            if (data.tableName) {
+                selectedTableElement.textContent = data.tableName;
+            } else {
+                selectedTableElement.textContent = 'No table selected yet.';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching selected table:', error);
+            const selectedTableElement = document.getElementById('currentSelectedTable');
+            selectedTableElement.textContent = 'Error loading selected table.'; // Error message
+        });
+
+
+
+
+
+
+
+
+
+
+};
+
+
+
+
+
+// Function to save the selected table name
+function saveSelectedTable(workflowId) {
+    const tableSelect = document.getElementById('tableSelect');
+    const selectedTable = tableSelect.value; // Get the selected table name
+
+    if (!selectedTable) {
+        alert("Please select a table first.");
+        return;
+    }
+
+    // Send the selected table name to the backend to save it in the workflow table
+    fetch(`/api/workflow/${workflowId}/setTable`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tableName: selectedTable }) // Send the selected table as JSON
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message); // Show success message
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to save table.');
+    });
+}
+
+
+
+
+
+
+
+
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
